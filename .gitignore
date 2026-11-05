@@ -1,0 +1,13 @@
+# 컴파일 결과
+out/
+*.class
+sources.txt
+
+# IDE 설정 (각자 환경이 달라서 올리지 않음)
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
