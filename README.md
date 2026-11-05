@@ -60,7 +60,7 @@
 ## 4. 프로젝트 폴더 구조
 ```
 OOP_Teamproject/
-├─ run.bat                 컴파일 + 실행 (Windows)
+├─ run.bat / test.bat      컴파일 + 실행 / 테스트 (Windows)
 ├─ src/shop/
 │  ├─ Main.java            프로그램 시작점
 │  ├─ common/              공통 인터페이스, 저장소
@@ -75,10 +75,10 @@ OOP_Teamproject/
 ├─ test/shop/              기능 테스트
 └─ docs/                   클래스 다이어그램, 발표자료(PDF)
 ```
-> 계획한 구조. 개발하면서 바뀌면 함께 수정한다.
+> 개발하면서 구조가 바뀌면 이 표도 함께 수정한다. 빈 폴더의 `.gitkeep`은 폴더를 git에 올리기 위한 빈 파일이라, 코드를 넣은 뒤 지워도 된다.
 
 ## 5. 실행 방법
-Windows: 폴더의 `run.bat` 더블클릭
+Windows: 폴더의 `run.bat` 더블클릭 (테스트는 `test.bat`)
 
 직접 실행 (macOS/Linux 포함):
 ```
@@ -98,7 +98,7 @@ java -cp out shop.Main
 | 추상성 | (작성) | (작성) |
 
 ## 8. 생성형 AI 활용
-- **사용 도구**: Claude (저장소 초기 셋업: 실행 스크립트, README 목차)
+- **사용 도구**: Claude (저장소 초기 셋업: 폴더 구조, 실행 스크립트, README 목차, PR 템플릿)
 - **활용 수준**: (최종 선택, 0~4단계)
 - **주요 활용 내용**: (작성)
 - **AI 생성 코드 중 검토·수정한 부분**: (작성)
