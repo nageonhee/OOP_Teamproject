@@ -1,13 +1,33 @@
-# 컴파일 결과
+### IntelliJ IDEA ###
 out/
-*.class
-sources.txt
+!**/src/main/**/out/
+!**/src/test/**/out/
+.kotlin
 
-# IDE 설정 (각자 환경이 달라서 올리지 않음)
-.idea/
-*.iml
+### Eclipse ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
 .vscode/
 
-# OS
+### Mac OS ###
 .DS_Store
-Thumbs.db
+### IntelliJ project files ###
+.idea/
+*.iml
