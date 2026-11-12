@@ -87,7 +87,170 @@ java -cp out shop.Main
 ```
 
 ## 6. 클래스 다이어그램
-(11주차 작성 — `docs/`에 이미지 저장 후 여기에 첨부)
+> **초기 설계안**이다. 구현하면서 클래스·메소드가 바뀌면 이 그림도 함께 고치고, 바뀐 이유는 10번에 적는다.
+> 나건희 담당: `Product`·`Cart`·`Order`·`Service`·`Repository` / 최동근 담당: `Member`·`DiscountPolicy`·`PaymentMethod`·`ConsoleApp`
+
+```mermaid
+classDiagram
+    direction LR
+
+    %% ===== 상품 (나건희) =====
+    class Product {
+        <<abstract>>
+        -String id
+        -String name
+        -int price
+        -int stock
+        +getCategory()* String
+        +getShippingFee()* int
+        +getUnitPrice() int
+        +hasStock(int) boolean
+        +decreaseStock(int)
+        +increaseStock(int)
+    }
+    class Electronics {
+        -int warrantyMonths
+    }
+    class Clothing {
+        -String size
+    }
+    class Food {
+        -LocalDate expiryDate
+        +getUnitPrice() int
+    }
+    Product <|-- Electronics
+    Product <|-- Clothing
+    Product <|-- Food
+    note for Food "유통기한 임박 시 getUnitPrice()를 재정의(오버라이딩)해 할인가 반환"
+
+    %% ===== 장바구니·주문 (나건희) =====
+    class Cart {
+        -Map~String, CartItem~ items
+        +add(Product, int)
+        +changeQuantity(String, int)
+        +remove(String)
+        +getSubtotal() int
+        +getShippingFee() int
+        +getItems() List~CartItem~
+    }
+    class CartItem {
+        -Product product
+        -int quantity
+        +getLineTotal() int
+    }
+    class Order {
+        -String id
+        -OrderStatus status
+        -int subtotal
+        -int discount
+        -int shippingFee
+        +checkout(Member, PaymentMethod, DiscountPolicy)$ Order
+        +ship()
+        +deliver()
+        +cancel()
+        +getTotal() int
+    }
+    class OrderLine {
+        -int unitPrice
+        -int quantity
+    }
+    class OrderStatus {
+        <<enumeration>>
+        PAID
+        SHIPPED
+        DELIVERED
+        CANCELLED
+        +canCancel() boolean
+    }
+    Cart *-- CartItem
+    CartItem --> Product
+    Order *-- OrderLine
+    OrderLine --> Product
+    Order --> OrderStatus
+
+    %% ===== 회원·할인·결제 (최동근) =====
+    class Member {
+        <<abstract>>
+        -String id
+        -String name
+        -int points
+        +getGrade()* String
+        +getDiscountPolicy()* DiscountPolicy
+        +getPointRatePercent()* int
+        +addPoints(int)
+        +usePoints(int)
+        +revokePoints(int)
+    }
+    class RegularMember
+    class VipMember
+    Member <|-- RegularMember
+    Member <|-- VipMember
+    Member *-- Cart : 장바구니 1개
+
+    class DiscountPolicy {
+        <<interface>>
+        +discount(int) int
+        +describe() String
+    }
+    class NoDiscount
+    class RateDiscount {
+        -int percent
+    }
+    class FixedAmountDiscount {
+        -int amountOff
+        -int minimumOrder
+    }
+    DiscountPolicy <|.. NoDiscount
+    DiscountPolicy <|.. RateDiscount
+    DiscountPolicy <|.. FixedAmountDiscount
+    Member --> DiscountPolicy : 등급별 정책
+
+    class PaymentMethod {
+        <<interface>>
+        +pay(Member, int)
+        +refund(Member, int)
+    }
+    class CardPayment
+    class PointPayment
+    PaymentMethod <|.. CardPayment
+    PaymentMethod <|.. PointPayment
+
+    Order --> Member
+    Order --> PaymentMethod
+    Order ..> DiscountPolicy : 쿠폰 적용
+
+    %% ===== 저장소·서비스·화면 =====
+    class Repository~T~ {
+        <<interface>>
+        +save(T)
+        +findById(String) Optional~T~
+        +findAll() List~T~
+        +delete(String) boolean
+    }
+    class InMemoryRepository~T~
+    Repository~T~ <|.. InMemoryRepository~T~
+
+    class ProductService {
+        +register(Product)
+        +get(String) Product
+        +search(String) List~Product~
+    }
+    class OrderService {
+        +placeOrder(Member, PaymentMethod, DiscountPolicy) Order
+        +cancel(Member, String) Order
+    }
+    ProductService --> Repository~T~
+    OrderService --> Repository~T~
+    OrderService ..> Order : 생성
+
+    class ConsoleApp {
+        +run()
+    }
+    ConsoleApp --> ProductService
+    ConsoleApp --> OrderService
+```
+
+**관계 읽는 법**: `◁──` 상속(extends), `◁┄┄` 구현(implements), `◆──` 구성(부분이 전체에 속함, 예: 장바구니는 회원에 속함), `──▶` 연관(참조), `┄┄▶` 의존(메소드 안에서 사용)
 
 ## 7. OOP 적용 내용
 | 원리 | 적용 클래스 | 설계 이유 |
