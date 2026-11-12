@@ -1,5 +1,0 @@
-# 줄바꿈 문자를 통일해서, 내용 변경 없이 파일 전체가 바뀐 것처럼 보이는 일을 막는다
-* text=auto
-*.java text eol=lf
-*.md text eol=lf
-*.bat text eol=crlf
