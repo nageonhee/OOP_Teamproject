@@ -84,171 +84,223 @@ javac -encoding UTF-8 -d out $(find src -name "*.java")
 java -cp out shop.Main
 ```
 
-## 6. 클래스 다이어그램
-> **초기 설계안**이다. 구현하면서 클래스·메소드가 바뀌면 이 그림도 함께 고치고, 바뀐 이유는 10번에 적는다.
-> 나건희 담당: `Product`·`Cart`·`Order`·`Service`·`Repository` / 최동근 담당: `Member`·`DiscountPolicy`·`PaymentMethod`·`ConsoleApp`
+## 6. 클래스 다이어그램과 관계 설계
+
+> 손글씨 설계와 팀에서 정리한 관계 목록을 바탕으로 작성한 설계안입니다. 구현 완료를 의미하지 않으며, 코드 변경 시 함께 갱신합니다.
+> 이번 설계에서는 상품을 식료품·문구용품으로, 회원등급을 일반·실버·골드로 구분합니다. 다른 절에 남아 있는 전자제품·의류, 쿠폰·결제·배송 관련 내용은 이전 계획이며 이번 다이어그램의 범위에 포함하지 않습니다.
+
+### 6.1 클래스의 역할
+
+| 클래스 | 주요 정보 | 책임 |
+|---|---|---|
+| 회원(Member) | 회원ID, 비밀번호 해시, 이름, 주소, 전화번호, 가입일, 누적 구매금액, 포인트, 등급 | 회원 정보와 포인트·누적 구매금액 관리 |
+| 회원등급(MembershipGrade) | 등급명, 할인율, 적립률 | 공통 혜택 계산 규약과 계산 기능 제공 |
+| 일반·실버·골드 | 등급별 혜택 기준 | 등급별 할인·적립 계산 |
+| 상품(Product) | 상품ID, 상품명, 설명, 가격, 재고수량, 판매 여부 | 상품 정보와 재고 관리 |
+| 식료품·문구용품 | 상품의 공통 정보 | 상품 유형 구분 |
+| 장바구니(Cart) | 장바구니항목 목록 | 담기·삭제·수량 변경·합계 계산 |
+| 장바구니항목(CartItem) | 상품 참조, 수량 | 현재 상품 가격을 기준으로 항목 금액 계산 |
+| 주문(Order) | 주문ID, 회원, 일시, 상태, 상품합계, 할인액, 최종금액, 지급 포인트 | 주문 정보 보존, 주문 확정·취소 |
+| 주문항목(OrderItem) | 상품 참조, 주문 당시 상품명·단가, 주문 수량 | 주문 시점의 개별 구매 정보 보존 |
+
+- 기존 메모의 **주문내역** 중 상품ID·수량·단가를 담는 개별 기록은 **주문항목**으로 명명합니다. 주문내역 조회는 주문과 주문항목을 함께 보여주는 기능입니다.
+- 가격·재고·수량·포인트는 외부에서 직접 변경하지 않고 검증 메서드로 관리합니다.
+- 비밀번호는 원문으로 보관하지 않습니다. 실제 인증 구현 여부는 별도로 정하며, 회원 선택 방식으로 시작할 수도 있습니다.
+- 상품 종류별 추가 속성·업무 규칙과 등급별 수치는 구현 전에 확정합니다. 종류 이름만 다르게 두는 상속에 그치지 않도록 검토합니다.
+
+### 6.2 전체 UML 관계 목록
+
+**회원과 등급**
+
+- `회원 "0..*" ────> "1" 회원등급`: 회원은 등급 하나를 참조하며, 같은 등급을 여러 회원이 공유할 수 있습니다.
+- `일반 ────▷ 회원등급`: 일반 등급은 회원등급을 상속합니다.
+- `실버 ────▷ 회원등급`: 실버 등급은 회원등급을 상속합니다.
+- `골드 ────▷ 회원등급`: 골드 등급은 회원등급을 상속합니다.
+
+**장바구니**
+
+- `회원 "1" ◆──── "1" 장바구니`: 회원마다 장바구니 하나를 소유하며, 회원 제거 시 장바구니도 제거합니다.
+- `장바구니 "1" ◆──── "0..*" 장바구니항목`: 장바구니는 비어 있거나 여러 항목을 포함합니다.
+- `장바구니항목 "0..*" ────> "1" 상품`: 각 항목은 상품 하나를 참조합니다. 상품은 여러 장바구니항목에서 참조될 수 있습니다.
+
+**주문과 주문항목**
+
+- `주문 "0..*" ────> "1" 회원`: 각 주문은 주문한 회원 하나를 참조합니다. 회원은 주문을 0개 이상 가질 수 있습니다. 회원별 주문 조회는 이 연결을 기준으로 수행합니다.
+- `주문 "1" ◆──── "1..*" 주문항목`: 확정된 주문은 하나 이상의 주문항목을 소유합니다. 주문 객체 자체를 삭제하면 항목도 함께 제거하지만, **주문 취소는 상태 변경이므로 주문과 항목을 삭제하지 않습니다.**
+- `주문항목 "0..*" ────> "1" 상품`: 각 주문항목은 상품 하나를 참조합니다.
+- `주문 ────> 주문상태`: 주문 완료·취소 상태를 열거형으로 관리합니다.
+
+**주문 처리 시 사용**
+
+- `주문 ┄┄┄┄> 장바구니`: 주문 확정 시 장바구니를 전달받아 항목을 읽고, 성공 후 주문한 항목을 제거합니다.
+- 주문은 이미 연관된 회원의 포인트와 누적 구매금액 변경 메서드를 호출합니다. 따라서 같은 대상을 향한 의존선을 중복해서 그리지 않습니다.
+- `주문 ┄┄┄┄> 회원등급`: 주문 시 회원의 등급으로 할인액과 적립 포인트를 계산합니다.
+
+**상품 유형**
+
+- `식료품 ────▷ 상품`: 식료품은 상품을 상속합니다.
+- `문구용품 ────▷ 상품`: 문구용품은 상품을 상속합니다.
+
+### 6.3 전체 클래스 다이어그램
+
+속성·메서드명과 자료형은 구현을 위한 초안입니다. 장바구니항목과 주문항목은 서로 상속하지 않고 각각 상품을 참조합니다.
 
 ```mermaid
 classDiagram
-    direction LR
+    direction TB
 
-    %% ===== 상품 (나건희) =====
-    class Product {
+    class Member["회원"] {
+        -String id
+        -String passwordHash
+        -String name
+        -String address
+        -String phone
+        -LocalDate joinedAt
+        -long purchaseTotal
+        -long points
+        -MembershipGrade grade
+        -Cart cart
+        +changeGrade(MembershipGrade grade) void
+        +addPoints(long amount) void
+        +revokePoints(long amount) void
+        +addPurchaseTotal(long amount) void
+        +subtractPurchaseTotal(long amount) void
+    }
+
+    class MembershipGrade["회원등급"] {
+        <<abstract>>
+        -String name
+        -int discountRate
+        -int pointRate
+        +calculatePayment(long subtotal) long
+        +calculateDiscount(long subtotal)* long
+        +calculatePoints(long payment)* long
+    }
+    class NormalGrade["일반"] {
+        +calculateDiscount(long subtotal) long
+        +calculatePoints(long payment) long
+    }
+    class SilverGrade["실버"] {
+        +calculateDiscount(long subtotal) long
+        +calculatePoints(long payment) long
+    }
+    class GoldGrade["골드"] {
+        +calculateDiscount(long subtotal) long
+        +calculatePoints(long payment) long
+    }
+
+    class Product["상품"] {
         <<abstract>>
         -String id
         -String name
-        -int price
+        -String description
+        -long price
         -int stock
+        -boolean onSale
+        +updateInfo(String name, String description, long price) void
+        +hasStock(int quantity) boolean
+        +decreaseStock(int quantity) void
+        +restoreStock(int quantity) void
+        +stopSale() void
         +getCategory()* String
-        +getShippingFee()* int
-        +getUnitPrice() int
-        +hasStock(int) boolean
-        +decreaseStock(int)
-        +increaseStock(int)
     }
-    class Electronics {
-        -int warrantyMonths
+    class Food["식료품"] {
+        +getCategory() String
     }
-    class Clothing {
-        -String size
+    class Stationery["문구용품"] {
+        +getCategory() String
     }
-    class Food {
-        -LocalDate expiryDate
-        +getUnitPrice() int
-    }
-    Product <|-- Electronics
-    Product <|-- Clothing
-    Product <|-- Food
-    note for Food "유통기한 임박 시 getUnitPrice()를 재정의(오버라이딩)해 할인가 반환"
 
-    %% ===== 장바구니·주문 (나건희) =====
-    class Cart {
-        -Map~String, CartItem~ items
-        +add(Product, int)
-        +changeQuantity(String, int)
-        +remove(String)
-        +getSubtotal() int
-        +getShippingFee() int
-        +getItems() List~CartItem~
+    class Cart["장바구니"] {
+        -List~CartItem~ items
+        +add(Product product, int quantity) void
+        +changeQuantity(String productId, int quantity) void
+        +remove(String productId) void
+        +calculateTotal() long
+        +clearOrderedItems() void
     }
-    class CartItem {
+    class CartItem["장바구니항목"] {
         -Product product
         -int quantity
-        +getLineTotal() int
+        +changeQuantity(int quantity) void
+        +calculateAmount() long
     }
-    class Order {
+
+    class Order["주문"] {
         -String id
+        -Member member
+        -LocalDateTime orderedAt
         -OrderStatus status
-        -int subtotal
-        -int discount
-        -int shippingFee
-        +checkout(Member, PaymentMethod, DiscountPolicy)$ Order
-        +ship()
-        +deliver()
-        +cancel()
-        +getTotal() int
-    }
-    class OrderLine {
-        -int unitPrice
-        -int quantity
-    }
-    class OrderStatus {
-        <<enumeration>>
-        PAID
-        SHIPPED
-        DELIVERED
-        CANCELLED
+        -List~OrderItem~ items
+        -long subtotal
+        -long discountAmount
+        -long paymentAmount
+        -long awardedPoints
+        +place(Member member, Cart cart)$ Order
+        +cancel() void
         +canCancel() boolean
     }
-    Cart *-- CartItem
-    CartItem --> Product
-    Order *-- OrderLine
-    OrderLine --> Product
-    Order --> OrderStatus
+    class OrderItem["주문항목"] {
+        -Product product
+        -String productNameAtOrder
+        -long unitPriceAtOrder
+        -int quantity
+        +calculateAmount() long
+    }
+    class OrderStatus["주문상태"] {
+        <<enumeration>>
+        ORDERED
+        CANCELED
+    }
 
-    %% ===== 회원·할인·결제 (최동근) =====
-    class Member {
-        <<abstract>>
-        -String id
-        -String name
-        -int points
-        +getGrade()* String
-        +getDiscountPolicy()* DiscountPolicy
-        +getPointRatePercent()* int
-        +addPoints(int)
-        +usePoints(int)
-        +revokePoints(int)
-    }
-    class RegularMember
-    class VipMember
-    Member <|-- RegularMember
-    Member <|-- VipMember
-    Member *-- Cart : 장바구니 1개
+    Member "0..*" --> "1" MembershipGrade : 현재 등급
+    MembershipGrade <|-- NormalGrade
+    MembershipGrade <|-- SilverGrade
+    MembershipGrade <|-- GoldGrade
+    Member "1" *-- "1" Cart : 소유
+    Cart "1" *-- "0..*" CartItem : 포함
+    CartItem "0..*" --> "1" Product : 담은 상품
+    Order "0..*" --> "1" Member : 주문 회원
+    Order "1" *-- "1..*" OrderItem : 포함
+    OrderItem "0..*" --> "1" Product : 주문 상품
+    Order --> OrderStatus : 상태
+    Order ..> Cart : 주문 시 사용 후 정리
+    Order ..> MembershipGrade : 할인 및 적립 계산
+    Product <|-- Food
+    Product <|-- Stationery
 
-    class DiscountPolicy {
-        <<interface>>
-        +discount(int) int
-        +describe() String
-    }
-    class NoDiscount
-    class RateDiscount {
-        -int percent
-    }
-    class FixedAmountDiscount {
-        -int amountOff
-        -int minimumOrder
-    }
-    DiscountPolicy <|.. NoDiscount
-    DiscountPolicy <|.. RateDiscount
-    DiscountPolicy <|.. FixedAmountDiscount
-    Member --> DiscountPolicy : 등급별 정책
-
-    class PaymentMethod {
-        <<interface>>
-        +pay(Member, int)
-        +refund(Member, int)
-    }
-    class CardPayment
-    class PointPayment
-    PaymentMethod <|.. CardPayment
-    PaymentMethod <|.. PointPayment
-
-    Order --> Member
-    Order --> PaymentMethod
-    Order ..> DiscountPolicy : 쿠폰 적용
-
-    %% ===== 저장소·서비스·화면 =====
-    class Repository~T~ {
-        <<interface>>
-        +save(T)
-        +findById(String) Optional~T~
-        +findAll() List~T~
-        +delete(String) boolean
-    }
-    class InMemoryRepository~T~
-    Repository~T~ <|.. InMemoryRepository~T~
-
-    class ProductService {
-        +register(Product)
-        +get(String) Product
-        +search(String) List~Product~
-    }
-    class OrderService {
-        +placeOrder(Member, PaymentMethod, DiscountPolicy) Order
-        +cancel(Member, String) Order
-    }
-    ProductService --> Repository~T~
-    OrderService --> Repository~T~
-    OrderService ..> Order : 생성
-
-    class ConsoleApp {
-        +run()
-    }
-    ConsoleApp --> ProductService
-    ConsoleApp --> OrderService
+    note for Order "취소 후에도 주문과 항목을 보존합니다. 재고를 복구하고 당시 지급 포인트를 회수합니다."
+    note for OrderItem "상품 가격이 변경되어도 주문 당시 단가와 상품명을 유지합니다."
 ```
 
-**관계 읽는 법**: `◁──` 상속(extends), `◁┄┄` 구현(implements), `◆──` 구성(부분이 전체에 속함, 예: 장바구니는 회원에 속함), `──▶` 연관(참조), `┄┄▶` 의존(메소드 안에서 사용)
+### 6.4 주문·취소 동작 흐름
+
+1. 회원이 상품을 선택하여 장바구니에 담습니다. 같은 상품은 수량을 합치며, 이때 재고를 차감하지 않습니다.
+2. 주문 시 장바구니가 비어 있지 않은지, 모든 항목이 판매 중인지, 수량과 재고가 유효한지 먼저 검사합니다. 하나라도 실패하면 재고·포인트·장바구니를 변경하지 않습니다.
+3. 회원등급의 메서드로 할인액과 할인 후 금액 기준 적립 포인트를 계산합니다. 금액은 원 단위 정수로 처리하고 소수점 이하는 버립니다.
+4. 장바구니항목에서 상품·수량을 읽어 별도의 주문항목을 생성합니다. 당시 상품명·단가와 주문에 적용한 할인액·지급 포인트를 보존합니다.
+5. 주문을 확정하고 재고를 차감하며 회원의 포인트와 누적 구매금액을 증가시킵니다. 누적 구매금액은 할인 후 금액을 기준으로 합니다.
+6. 주문 성공 후 주문한 장바구니항목을 제거합니다. 실제 결제 연동은 이번 설계에 포함하지 않습니다.
+7. 주문내역 조회 시 주문과 그 안의 주문항목을 함께 표시합니다.
+8. 취소 시 중복 취소 여부를 검사하고, 재고를 복구하며 해당 주문에서 지급한 포인트와 누적 구매금액을 되돌립니다. 상태만 취소로 변경하고 기록은 남깁니다.
+
+회원 탈퇴의 실제 구현은 별도로 결정합니다. 주문이 회원·상품을 계속 참조하므로 주문 이력이 있는 회원·상품은 기록을 보존하고 비활성화하는 방향으로 설계합니다. 적립금 사용·자동 승급·부분 취소는 이번 설계에서 제외합니다.
+
+### 6.5 관계 기호와 설계 시 주의점
+
+| 표기 | 의미 |
+|---|---|
+| 실선 + 빈 삼각형 `자식 ────▷ 부모` | 상속: 자식이 부모의 한 종류 |
+| 실선 + 채워진 마름모 `전체 ◆──── 부분` | 합성: 부분을 전체가 소유하고 생명주기를 관리 |
+| 실선 + 열린 화살표 `A ────> B` | 방향 있는 연관: A가 B를 참조 |
+| 점선 + 열린 화살표 `A ┄┄┄┄> B` | 의존: 실행 과정에서 B를 사용 |
+| `1`, `0..*`, `1..*` | 각각 하나, 0개 이상, 1개 이상 |
+
+- 관계 끝의 숫자는 반대편 객체 하나에 연결될 수 있는 해당 객체의 개수입니다.
+- 주문은 회원을 지속적으로 참조하므로 연관으로 표시합니다. 일시적인 호출이 있다고 같은 두 클래스 사이에 의존선을 추가할 필요는 없습니다.
+- 상품 → 장바구니 → 주문은 처리 흐름이며 상속 계층이 아닙니다.
+- 현재 설계에서는 주문이 여러 객체와 협력합니다. 구현 중 책임이 과도해지면 주문·취소 조율을 OrderService로 옮기고 다이어그램도 갱신합니다.
+- 상속 자체만으로 OOP 적용이 완성되는 것은 아닙니다. 등급별 계산이 실제 주문에 반영되는지, 상품 유형의 차이가 실제 요구사항에 필요한지 검토합니다.
 
 ## 7. OOP 적용 내용
 | 원리 | 적용 클래스 | 설계 이유 |
