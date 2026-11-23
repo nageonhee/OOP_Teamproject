@@ -1,98 +1,82 @@
-import java.time.LocalDate;
+public class Member extends Account {
 
-public class Member {
-	private String memberID; // id
-	private String name; 
-	private String passwordHash; // 비밀번호 해시인데, 이건 한번 더 찾아보겠습니다.
-	private String address; // 주소
-	private String phoneNumber; //연락처
-	private LocalDate joinDate; // 가입알
-	private int point; // 포인트
-	private long totalPurchaseAmount; // 누적금액
-	private MembershipGrade;
-	private cart;
+    // 일반 회원 전용 필드
+    private int points;
+    private long totalPurchaseAmount;
 
-	public Member(String memberID, String name, String passwordHash, String address, String phoneNumber, LocalDate joindate, MembershipGrade)
-	{
-		this.memberID = memberID;
-		this.name = name;
-		this.passwordHash = passwordHash;
-		this.address = address;
-		this.phoneNumber = phoneNumber;
-		this.joinDate = joinDate;
+    private MembershipGrade membershipGrade;
+    private Cart cart;
 
-		this.point = 0;
-		this.totalPurchaseAmount = 0;
-		this.membershipGrade = membershipGrade;
-		this.cart = new Cart();
-	}
-	//회원등급 변경
-	public void changeGrade(MembershipGrade newGrade)
-	{
-		this.MembershipGrade = newGrade;
-	}
 
-	//포인트 적립
-	public void earnPoints(int amount)
-	{
-		if (amount > 0) {
-			this.point+= amount;
-		}
-	}
+    // 생성자
+    public Member(String accountId, String passwordHash,
+                         String name, String address,
+                         String phoneNumber,
+                         MembershipGrade membershipGrade) {
 
-	//포인트 사용
-	public boolean usePoints(int amount)
-	{
-	if (amount > 0 && this.points >= amount)
-		{
-			this.points -= amount;
-			return true;
-		}
-		return false;
-	}
+        super(accountId, passwordHash, name,
+              address, phoneNumber);
 
-	//누적구매금액 변경
-	public void changeTotalPurchaseAmount(long amount)
-	{
-		if (amount>0){
-			this.totalPurchaseAmount += amount;
-		}
-	}
-	
-	public String getMemberID() {
-		return memberID;
-	}
+        this.points = 0;
+        this.totalPurchaseAmount = 0;
+        this.membershipGrade = membershipGrade;
+        this.cart = new Cart();
+    }
 
-	public String getName(){
-		return name;
-	}
 
-	public String getAddress(){
-		return address;
-	}
+    // 계정 유형 확인
+    @Override
+    public String checkAccountType() {
+        return "일반 회원";
+    }
 
-	public String getPhoneNumber() {
-		return phoneNumber;
-	}
 
-	public LocalDate getJoinDate(){
-		return joinDate;
-	}
+    // 회원 등급 변경
+    public void changeGrade(MembershipGrade newGrade) {
+        this.membershipGrade = newGrade;
+    }
 
-	public int getPoint() {
-		return point;
-	}
 
-	public long getTotalPurchaseAmount() {
-		return totalPurchaseAmount;
-	}
+    // 포인트 적립
+    public void earnPoints(int amount) {
+        if (amount > 0) {
+            this.points += amount;
+        }
+    }
 
-	public MembershipGrade(){
-		return MembershipGrade;
-	}
 
-	public Cart getCart(){
-		return cart;
-	}
+    // 포인트 사용
+    public boolean usePoints(int amount) {
+        if (amount > 0 && this.points >= amount) {
+            this.points -= amount;
+            return true;
+        }
+        return false;
+    }
 
+
+    // 누적 구매 금액 변경
+    public void changeTotalPurchaseAmount(long amount) {
+        if (amount > 0) {
+            this.totalPurchaseAmount += amount;
+        }
+    }
+
+
+    // Getter
+    public int getPoints() {
+        return points;
+    }
+
+    public long getTotalPurchaseAmount() {
+        return totalPurchaseAmount;
+    }
+
+    public MembershipGrade getMembershipGrade() {
+        return membershipGrade;
+    }
+
+    public Cart getCart() {
+        return cart;
+    }
 }
