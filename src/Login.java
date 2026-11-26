@@ -39,9 +39,9 @@ public class Login {
 
             menu = new AdminMenu((Admin) account, sc);
 
-        } else if (account instanceof GeneralMember) {
+        } else if (account instanceof Member) {
 
-            menu = new UserMenu((GeneralMember) account, sc);
+            menu = new UserMenu((Member) account, sc);
 
         } else {
 
